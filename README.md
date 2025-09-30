@@ -1,8 +1,16 @@
-Embedded Night-Vision System for Pedestrian Detection
-This repository contains the design and implementation of an embedded night-vision system for real-time pedestrian detection in low-light and nighttime conditions. The system integrates infrared or night-vision sensors with optimized image processing algorithms to accurately detect pedestrians on embedded hardware.
+<h1>🌙✨ Embedded Night-Vision System for Pedestrian Detection 👣🚶‍♂️</h1>
+![Night Vision](https://media.giphy.com/media/jrgi5cXK9prT63oorc/giphy system for real-time pedestrian detection in low-light conditions using infrared sensors and optimized image processing in Python. Designed for resource-limited hardware, it improves safety in autonomous vehicles and surveillance.
 
-Key features include robust computer vision techniques for low-light pedestrian recognition, efficient processing suitable for resource-constrained devices, and compatibility with various sensor types and embedded platforms. The project aims to improve pedestrian safety in applications such as autonomous vehicles, smart surveillance, and safety alert systems.
+🌟 Features
+Robust low-light pedestrian detection 🌑
 
-Technologies used are embedded C/C++, OpenCV for image processing, infrared sensor interfacing, and lightweight machine learning models optimized for edge computing.
+Efficient algorithms for embedded devices ⚙️
 
-This repository provides all necessary source code, documentation, and hardware designs to build and extend the system for research or practical deployment.
+Compatible with various sensors and platforms 🛠
+
+🛠 Tech
+![Python](https://img.shields.io/badge/Python-3670A0?style=for-the-badge&logo=python&logoColorhttps://img.shields.io/badge/OpenCV-5C3EE8?style=for-the-badge&logo=opencv&logoColorhttps://img.shields.io/badge/Machine_Learning-F0DB4F?style=for-the-badge&logo=sc
+
+![Infrared Sensor](https://img.shields.io/badge/Infrared_Sensor-FF5733?style=for-the-badge&logo=wand&
+
+Builds safer environments with reliable night-time pedestrian recognition.
