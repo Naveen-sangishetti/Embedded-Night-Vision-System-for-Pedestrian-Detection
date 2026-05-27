@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*.pyc
+*.weights
+temp.png
+desktop.ini
