@@ -356,7 +356,7 @@ with st.sidebar:
     0.1, 1.0, 0.3, 0.05,
     help="Lower threshold helps detect dim pedestrians (YOLOv2).",
     disabled="Haar" in method,
-)    )
+)
 
     nms_thresh = st.slider(
     "NMS threshold",
