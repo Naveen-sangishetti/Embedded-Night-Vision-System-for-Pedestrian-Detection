@@ -225,7 +225,7 @@ def _list_bounding_boxes(outputs, h, w, conf_thresh=0.5):
     return boxes, confidences, class_ids
 
 
-def detect_yolo(image: np.ndarray, conf_thresh: float = 0.5, nms_thresh: float = 0.3):
+def detect_yolo(image: np.ndarray, conf_thresh: float = 0.5, nms_thresh: float = 0.3, gamma: float = 1.0):
     """
     Run YOLOv2 pedestrian detection on *image* (BGR numpy array).
 
@@ -239,7 +239,11 @@ def detect_yolo(image: np.ndarray, conf_thresh: float = 0.5, nms_thresh: float =
     h, w = image.shape[:2]
     label_colors = np.random.RandomState(42).randint(0, 255, size=(len(class_labels), 3), dtype="uint8")
 
-    blob = cv2.dnn.blobFromImage(image, 1 / 255.0, (416, 416), swapRB=True, crop=False)
+    # Apply optional gamma correction before creating blob
+    if gamma != 1.0:
+        image = _adjust_gamma(image, gamma=gamma)
+    # Use larger input size for better detection accuracy
+    blob = cv2.dnn.blobFromImage(image, 1 / 255.0, (608, 608), swapRB=True, crop=False)
     net.setInput(blob)
     outputs = net.forward(layer_names)
 
@@ -274,38 +278,51 @@ def _adjust_gamma(image: np.ndarray, gamma: float = 1.0) -> np.ndarray:
 
 def detect_haar_adaboost(image: np.ndarray, gamma: float = 3.5):
     """
-    Run Haar + AdaBoost pedestrian detection pipeline.
+    Run Haar + AdaBoost pedestrian detection pipeline optimized for low‑light images.
 
-    Pipeline: gamma correction → histogram equalisation → CLAHE →
-    thresholding → HOG + SVM multi-scale detection.
+    Pipeline:
+    1. Gamma correction to brighten the image.
+    2. Convert to grayscale (required for HOG detector).
+    3. Optional contrast enhancement via CLAHE.
+    4. Detect pedestrians using HOG + SVM (default people detector).
 
     Returns
     -------
-    annotated : np.ndarray
-    count     : int
-    details   : list[dict]
+    annotated : np.ndarray – image with detections drawn
+    count     : int       – number of detections
+    details   : list[dict] – per‑detection info (label, confidence, box)
     """
+    # 1. Gamma correction for low‑light enhancement
     adjusted = _adjust_gamma(image, gamma=gamma)
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    gray_eq = cv2.equalizeHist(gray)
-    clahe = cv2.createCLAHE(clipLimit=20)
-    gray_clahe = clahe.apply(gray_eq)
-    _, thresh = cv2.threshold(gray_clahe, 80, 255, cv2.THRESH_TOZERO)
-
+    # 2. Convert to grayscale (HOG expects single channel)
+    gray = cv2.cvtColor(adjusted, cv2.COLOR_BGR2GRAY)
+    # 3. Apply CLAHE for contrast improvement (helps under‑exposed regions)
+    clahe = cv2.createCLAHE(clipLimit=2.0)
+    gray_clahe = clahe.apply(gray)
+    # 4. Initialize HOG descriptor with the default people detector
     hog = cv2.HOGDescriptor()
     hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
 
-    proc = imutils.resize(thresh, width=min(800, 800))
-    display = imutils.resize(adjusted, width=min(800, 800))
+    # Detect multi‑scale pedestrians
+    regions, _ = hog.detectMultiScale(
+        gray_clahe,
+        winStride=(4, 4),
+        padding=(8, 8),
+        scale=1.05,
+    )
 
-    regions, _ = hog.detectMultiScale(proc, winStride=(4, 4), padding=(8, 8), scale=1.05)
-
-    annotated = display.copy()
+    # Prepare annotated image (use the gamma‑adjusted colour image for visual output)
+    annotated = adjusted.copy()
     details = []
-    for x, y, w, h in regions:
+    for (x, y, w, h) in regions:
         cv2.rectangle(annotated, (x, y), (x + w, y + h), (0, 0, 255), 2)
         details.append({
             "label": "person",
+            "confidence": None,
+            "box": [int(x), int(y), int(w), int(h)],
+        })
+
+    return annotated, len(details), details
             "confidence": None,
             "box": [int(x), int(y), int(w), int(h)],
         })
@@ -343,24 +360,32 @@ with st.sidebar:
     )
 
     conf_thresh = st.slider(
-        "Confidence threshold",
-        0.1, 1.0, 0.5, 0.05,
-        help="Minimum confidence to keep a detection (YOLOv2 only).",
-        disabled="Haar" in method,
-    )
+    "Confidence threshold",
+    0.1, 1.0, 0.3, 0.05,
+    help="Lower threshold helps detect dim pedestrians (YOLOv2).",
+    disabled="Haar" in method,
+)    )
 
     nms_thresh = st.slider(
-        "NMS threshold",
-        0.1, 1.0, 0.3, 0.05,
-        help="Non-maximum suppression overlap threshold (YOLOv2 only).",
-        disabled="Haar" in method,
-    )
+    "NMS threshold",
+    0.1, 1.0, 0.4, 0.05,
+    help="Increase to keep overlapping boxes when needed (YOLOv2 only).",
+    disabled="Haar" in method,
+)
 
+    # Gamma correction slider for Haar (default) and optional for YOLO
     gamma_val = st.slider(
-        "Gamma correction",
-        0.5, 5.0, 3.5, 0.1,
-        help="Brighten dark images before Haar detection.",
+        "Gamma correction (Haar)",
+        0.5, 5.0, 2.2, 0.1,
+        help="Adjusted gamma for Haar detection in low‑light images.",
         disabled="YOLO" in method,
+    )
+    # Separate gamma slider for YOLO (optional)
+    gamma_yolo = st.slider(
+        "Gamma correction (YOLO)",
+        0.5, 5.0, 1.0, 0.1,
+        help="Apply gamma correction before YOLO processing (default 1.0 = no change).",
+        disabled="Haar" in method,
     )
 
     st.markdown("---")
@@ -468,7 +493,7 @@ if uploaded_file is not None:
 
         with st.spinner("Analyzing image — please wait…"):
             if "YOLO" in method:
-                annotated, count, details = detect_yolo(image, conf_thresh, nms_thresh)
+                annotated, count, details = detect_yolo(image, conf_thresh, nms_thresh, gamma=gamma_yolo)
             else:
                 annotated, count, details = detect_haar_adaboost(image, gamma_val)
 
