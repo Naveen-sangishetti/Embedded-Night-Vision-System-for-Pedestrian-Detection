@@ -318,8 +318,11 @@ def detect_haar_adaboost(image: np.ndarray, gamma: float = 3.5):
         cv2.rectangle(annotated, (x, y), (x + w, y + h), (0, 0, 255), 2)
         details.append({
             "label": "person",
+            "confidence": None,
+            "box": [int(x), int(y), int(w), int(h)],
+        })
 
-
+    return annotated, len(details), details
 
 
 # ═══════════════════════════════════════════════════════════════════════════
