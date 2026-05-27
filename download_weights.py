@@ -7,7 +7,7 @@ if not os.path.exists(weights_path):
 
     print("Downloading YOLOv2 weights...")
 
-    url = "https://github.com/pjreddie/darknet/raw/master/yolov2.weights"
+    url = "https://huggingface.co/NAVEEN-28/yolov2-weights/resolve/main/yolov2.weights"
 
     urllib.request.urlretrieve(url, weights_path)
 
