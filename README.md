@@ -19,7 +19,7 @@
 - ⬇️ Download annotated output images
 - ⚙️ Adjustable confidence & threshold settings
 - 🧠 CLAHE + gamma correction enhancement
-
+- still needs to improve accuracy and use ada boost haar model
 ---
 
 # 🚀 Run Locally
@@ -115,11 +115,9 @@ streamlit_app.py
 
 ---
 
-# 📸 Sample Output
+# LINK:
 
-- Real-time pedestrian detection
-- Bounding boxes with confidence scores
-- Night-vision optimized detection
+https://embedded-night-vision-system-for-pedestrian-detection-txod2app.streamlit.app/
 
 ---
 
