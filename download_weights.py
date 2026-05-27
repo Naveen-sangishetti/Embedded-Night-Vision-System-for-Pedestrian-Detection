@@ -1,7 +1,10 @@
 import os
 import urllib.request
 
-weights_path = "yolov2model/yolov2.weights"
+MODEL_DIR = "yolov2model"
+weights_path = os.path.join(MODEL_DIR, "yolov2.weights")
+
+os.makedirs(MODEL_DIR, exist_ok=True)
 
 if not os.path.exists(weights_path):
 
